@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -39,13 +40,15 @@ const idleConnsPerHost = 25
 var tlsCache = &tlsTransportCache{transports: make(map[tlsCacheKey]*http.Transport)}
 
 type tlsCacheKey struct {
-	insecure   bool
-	caData     string
-	certData   string
-	keyData    string
-	getCert    string
-	serverName string
-	dial       string
+	insecure           bool
+	caData             string
+	certData           string
+	keyData            string
+	getCert            string
+	serverName         string
+	nextProtos         string
+	dial               string
+	disableCompression bool
 }
 
 func (t tlsCacheKey) String() string {
@@ -106,12 +109,14 @@ func tlsConfigKey(c *Config) (tlsCacheKey, error) {
 		return tlsCacheKey{}, err
 	}
 	return tlsCacheKey{
-		insecure:   c.TLS.Insecure,
-		caData:     string(c.TLS.CAData),
-		certData:   string(c.TLS.CertData),
-		keyData:    string(c.TLS.KeyData),
-		getCert:    fmt.Sprintf("%p", c.TLS.GetCert),
-		serverName: c.TLS.ServerName,
-		dial:       fmt.Sprintf("%p", c.Dial),
+		insecure:           c.TLS.Insecure,
+		caData:             string(c.TLS.CAData),
+		certData:           string(c.TLS.CertData),
+		keyData:            string(c.TLS.KeyData),
+		getCert:            fmt.Sprintf("%p", c.TLS.GetCert),
+		serverName:         c.TLS.ServerName,
+		nextProtos:         strings.Join(c.TLS.NextProtos, ","),
+		dial:               fmt.Sprintf("%p", c.Dial),
+		disableCompression: c.DisableCompression,
 	}, nil
 }

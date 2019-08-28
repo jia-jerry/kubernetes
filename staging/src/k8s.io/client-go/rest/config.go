@@ -207,6 +207,12 @@ type TLSClientConfig struct {
 	// CAData holds PEM-encoded bytes (typically read from a root certificates bundle).
 	// CAData takes precedence over CAFile
 	CAData []byte
+
+	// NextProtos is a list of supported application level protocols, in order of preference.
+	// Used to populate tls.Config.NextProtos.
+	// To indicate to the server http/1.1 is preferred over http/2, set to ["http/1.1", "h2"] (though the server is free to ignore that preference).
+	// To use only http/1.1, set to ["http/1.1"].
+	NextProtos []string
 }
 
 var _ fmt.Stringer = TLSClientConfig{}
@@ -232,6 +238,7 @@ func (c TLSClientConfig) String() string {
 		CertData:   c.CertData,
 		KeyData:    c.KeyData,
 		CAData:     c.CAData,
+		NextProtos: c.NextProtos,
 	}
 	// Explicitly mark non-empty credential fields as redacted.
 	if len(cc.CertData) != 0 {
@@ -499,6 +506,7 @@ func AnonymousClientConfig(config *Config) *Config {
 			ServerName: config.ServerName,
 			CAFile:     config.TLSClientConfig.CAFile,
 			CAData:     config.TLSClientConfig.CAData,
+			NextProtos: config.TLSClientConfig.NextProtos,
 		},
 		RateLimiter: config.RateLimiter,
 		UserAgent:   config.UserAgent,
@@ -536,6 +544,7 @@ func CopyConfig(config *Config) *Config {
 			CertData:   config.TLSClientConfig.CertData,
 			KeyData:    config.TLSClientConfig.KeyData,
 			CAData:     config.TLSClientConfig.CAData,
+			NextProtos: config.TLSClientConfig.NextProtos,
 		},
 		UserAgent:     config.UserAgent,
 		Transport:     config.Transport,
