@@ -24,12 +24,16 @@ import (
 	"net"
 	"net/url"
 
+	"reflect"
+	rt "runtime"
+
 	"github.com/hashicorp/golang-lru"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog"
 )
 
 const (
@@ -164,17 +168,30 @@ func (cm *ClientManager) HookClient(cc ClientConfig) (*rest.RESTClient, error) {
 			delegateDialer = d.DialContext
 		}
 		cfg.Dial = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			buf := make([]byte, 1<<16)
+			rt.Stack(buf, true)
+
+			klog.Errorf("MutatingWebhookConfiguration: [addr: %s][host: %s] stack: %s", addr, host, string(buf))
 			if addr == host {
 				port := cc.Service.Port
 				if port == 0 {
 					port = 443
 				}
+				dname := rt.FuncForPC(reflect.ValueOf(cm.serviceResolver.ResolveEndpoint).Pointer()).Name()
+				entry := rt.FuncForPC(reflect.ValueOf(cm.serviceResolver.ResolveEndpoint).Pointer()).Entry()
+				klog.Errorf("MutatingWebhookConfiguration: ResolveEndpoint, Dial name: %v, Dial entry: %v", dname, entry)
+
 				u, err := cm.serviceResolver.ResolveEndpoint(cc.Service.Namespace, cc.Service.Name, port)
 				if err != nil {
 					return nil, err
 				}
 				addr = u.Host
 			}
+
+			dname := rt.FuncForPC(reflect.ValueOf(delegateDialer).Pointer()).Name()
+			entry := rt.FuncForPC(reflect.ValueOf(delegateDialer).Pointer()).Entry()
+			klog.Errorf("MutatingWebhookConfiguration: [serverName: %v], [addr: %v], Dial name: %v, Dial entry: %v", serverName, addr, dname, entry)
+
 			return delegateDialer(ctx, network, addr)
 		}
 

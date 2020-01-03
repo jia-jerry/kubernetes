@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/url"
+	"k8s.io/klog"
 
 	"k8s.io/apiserver/pkg/util/proxy"
 	listersv1 "k8s.io/client-go/listers/core/v1"
@@ -43,6 +44,8 @@ type aggregatorEndpointRouting struct {
 }
 
 func (r *aggregatorEndpointRouting) ResolveEndpoint(namespace, name string, port int32) (*url.URL, error) {
+	klog.Errorln("ResolveEndpoint: aggregatorEndpointRouting")
+
 	return proxy.ResolveEndpoint(r.services, r.endpoints, namespace, name, port)
 }
 
@@ -59,6 +62,8 @@ type aggregatorClusterRouting struct {
 }
 
 func (r *aggregatorClusterRouting) ResolveEndpoint(namespace, name string, port int32) (*url.URL, error) {
+	klog.Errorln("ResolveEndpoint: aggregatorClusterRouting")
+
 	return proxy.ResolveCluster(r.services, namespace, name, port)
 }
 
@@ -77,6 +82,8 @@ type loopbackResolver struct {
 }
 
 func (r *loopbackResolver) ResolveEndpoint(namespace, name string, port int32) (*url.URL, error) {
+	klog.Errorln("ResolveEndpoint: loopbackResolver")
+
 	if namespace == "default" && name == "kubernetes" && port == 443 {
 		return r.host, nil
 	}

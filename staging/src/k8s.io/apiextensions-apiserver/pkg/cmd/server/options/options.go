@@ -22,6 +22,8 @@ import (
 	"net"
 	"net/url"
 
+	"k8s.io/klog"
+
 	"github.com/spf13/pflag"
 
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -130,5 +132,7 @@ type serviceResolver struct {
 }
 
 func (r *serviceResolver) ResolveEndpoint(namespace, name string, port int32) (*url.URL, error) {
+	klog.Errorln("ResolveEndpoint: serverOptions")
+
 	return proxy.ResolveCluster(r.services, namespace, name, port)
 }
